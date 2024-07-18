@@ -36,8 +36,9 @@ def get_posts():
 
 
 @app.post("/createposts")
-def create_posts(new_post: Post):  # Post will validate that there is a title and content data with str value 
-  print(new_post.rating)
+def create_posts(post: Post):  # Post will validate that there is a title and content data with str value 
+  print(post)
+  print(post.model_dump()) # sends back a dictonary
   return {"data": "new post"}
-
+                          
 # schema
