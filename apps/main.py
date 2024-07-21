@@ -1,10 +1,19 @@
 # https://aws.amazon.com/what-is/api/#:~:text=API%20stands%20for%20Application%20Programming,other%20using%20requests%20and%20responses.
-from typing import Optional
 from fastapi import Body, FastAPI, Response, status, HTTPException
 from pydantic import BaseModel
 from random import randrange
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 
 app = FastAPI()
+
+try:
+  conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='0490258', cursor_factory=RealDictCursor)
+  cur = conn.cursor()
+  print("Connection successful")
+except Exception as error:
+  print("Connection failed\nError:", error)
 
 @app.get("/")
 def read_root():
@@ -14,58 +23,45 @@ class Post(BaseModel):
   title: str
   content: str # if str value isn't available, error
   published: bool = True # defaults to true
-  rating: Optional[int] = None # optional user input, else default to None. if value is not an int, return error 
 
-my_posts = [{"title": "title 1", "content": "content 1", "rating":5, "id": 1}, 
-            {"title": "title 2", "content": "content 2", "id": 2}] 
-
-def find_post(id):
-  for p in my_posts:
-    if p["id"] == id:
-      return p
     
-def find_post_index(id):
-  for i, p in enumerate(my_posts):
-    if p["id"] == id:
-      return i
-
-
 @app.get("/posts") # retreiving preexisting posts from server to user
 def get_posts():
-  return {"data": my_posts} # sends my_posts back to user
+  cur.execute("""SELECT * FROM posts;""")
+  posts = cur.fetchall()
+  return {"data": posts} # sends posts back to user
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)  # user to server
 def create_posts(post: Post):  # Post will validate that there is a title and content data with str value in the Body, when creating an entity, return a 201 status 
-  post_dict = post.model_dump()
-  post_dict['id'] = randrange(0, 100000000)
-  my_posts.append(post_dict) # adds post post_dict in Body(Postman) to array my_posts
-  return {"data": post_dict}
+  cur.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""", (post.title, post.content, post.published))
+  new_post = cur.fetchone()
+  conn.commit() # this will save the data to postgres database
+  return {"data": new_post}
 
 @app.get("/posts/{id}") # path parameter
 def get_post(id: int): # response: Response): # validates that id is an integer. no longer necessary to convert to integer by ourselves.
-  post = find_post(id) # id passed from get_post is a string as the path parameter
+  cur.execute("""SELECT * FROM posts WHERE id = %s""", (str(id)))
+  post = cur.fetchone()
   if not post:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id:{id} not found")
-    # response.status_code = status.HTTP_404_NOT_FOUND
-    # return {"message": f"post with id:{id} not found"}
+    
   return {"post_detail": post}
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
-  index = find_post_index(id)
-  if index == None:
+  cur.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id),))
+  deleted_post = cur.fetchone()
+  conn.commit()
+  if deleted_post == None:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
-  my_posts.pop(index)
-  print(my_posts)
   return Response(status_code=status.HTTP_204_NO_CONTENT) # data shouldnt be sent back
 
 @app.put("/posts/{id}") # updates data received from user
 def update_post(id: int, post:Post):
-  index = find_post_index(id)
-  if index == None:
+  cur.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", (post.title, post.content, post.published, str(id),))
+  updated_post = cur.fetchone()
+  conn.commit()
+  if updated_post == None:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
-  post_dict = post.model_dump()
-  post_dict["id"] = id
-  my_posts[index] = post_dict
-  return {"data": post_dict}
+  return {"data": updated_post}
