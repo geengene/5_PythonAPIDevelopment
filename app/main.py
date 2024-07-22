@@ -1,7 +1,8 @@
 # https://aws.amazon.com/what-is/api/#:~:text=API%20stands%20for%20Application%20Programming,other%20using%20requests%20and%20responses.
-from fastapi import Body, FastAPI, Response, status, HTTPException
+# https://fastapi.tiangolo.com/tutorial/sql-databases/
+# https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+from fastapi import FastAPI, Response, status, HTTPException
 from pydantic import BaseModel
-from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -31,7 +32,6 @@ def get_posts():
   posts = cur.fetchall()
   return {"data": posts} # sends posts back to user
 
-
 @app.post("/posts", status_code=status.HTTP_201_CREATED)  # user to server
 def create_posts(post: Post):  # Post will validate that there is a title and content data with str value in the Body, when creating an entity, return a 201 status 
   cur.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""", (post.title, post.content, post.published))
@@ -45,7 +45,6 @@ def get_post(id: int): # response: Response): # validates that id is an integer.
   post = cur.fetchone()
   if not post:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id:{id} not found")
-    
   return {"post_detail": post}
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
