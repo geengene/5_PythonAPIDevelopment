@@ -1,13 +1,18 @@
 # https://aws.amazon.com/what-is/api/#:~:text=API%20stands%20for%20Application%20Programming,other%20using%20requests%20and%20responses.
 # https://fastapi.tiangolo.com/tutorial/sql-databases/
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from . import models
+from .database import engine, get_db
+from sqlalchemy.orm import Session
 
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
 
 try:
   conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='0490258', cursor_factory=RealDictCursor)
@@ -17,7 +22,7 @@ except Exception as error:
   print("Connection failed\nError:", error)
 
 @app.get("/")
-def read_root():
+def read_root(db: Session = Depends(get_db)):
   return {"Hello": "Worldiiiii"}
 
 class Post(BaseModel):
