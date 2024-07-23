@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class PostBase(BaseModel): # schema/pydantic model: if the user wants to create a post, the request will only go through if it has "title" and "content" in the body
@@ -15,4 +15,16 @@ class Post(PostBase):
   id: int
   created_at: datetime
   class Config:
-    orm_mode = True # https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode
+    from_attributes = True # https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode
+
+class UserBase(BaseModel):
+  username: str
+  email: EmailStr
+  password: str
+
+class UserOut(UserBase):
+  password: str = Field(exclude=True)
+  id: int
+  created_at: datetime
+  class Config:
+    from_attributes = True # https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode
