@@ -12,7 +12,7 @@ Base = declarative_base()
 
 # Dependency
 def get_db():
-    db = SessionLocal()
+    db = SessionLocal() # makes a session towards the database for every request to that API endpoint, and closes when done.
     try:
         yield db
     finally:
