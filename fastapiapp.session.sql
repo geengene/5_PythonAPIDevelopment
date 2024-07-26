@@ -5,4 +5,4 @@
 -- DELETE FROM products WHERE id = 1 RETURNING *;
 -- UPDATE products SET is_sale = true, inventory = 100 WHERE inventory = 0;
 -- SELECT * FROM posts;
-SELECT * FROM users;
+SELECT * FROM posts;
