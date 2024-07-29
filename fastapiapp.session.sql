@@ -4,5 +4,10 @@
 -- INSERT INTO products (name, price, inventory) VALUES ('tortilla', 4, 1000), ('car', 20000, 5), ('toast', 1, 40) returning *; 
 -- DELETE FROM products WHERE id = 1 RETURNING *;
 -- UPDATE products SET is_sale = true, inventory = 100 WHERE inventory = 0;
--- SELECT * FROM posts;
+-- SELECT * FROM users;
 SELECT * FROM posts;
+-- SELECT * FROM votes;
+-- SELECT * FROM posts LEFT JOIN users ON posts.owner_id = users.id;
+-- SELECT users.id, COUNT(posts.id) FROM posts RIGHT JOIN users ON posts.owner_id = users.id GROUP BY users.id;
+-- SELECT posts.*, COUNT(votes.post_id) as votes FROM posts LEFT JOIN votes ON posts.id = votes.post_id GROUP BY posts.id;
+-- Drop Table posts, users, votes CASCADE

@@ -1,5 +1,6 @@
 from typing import List, Optional
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
+from sqlalchemy import func
 
 from app import oauth2
 from .. import models, schemas
@@ -14,21 +15,22 @@ def get_curr_user_posts(db: Session = Depends(get_db), curr_user= Depends(oauth2
   # posts = cur.fetchall()
   print(curr_user.email) # type: ignore
   posts = db.query(models.Post).filter(models.Post.owner_id == curr_user.id).all()
-  return posts # sends posts back to user
+  return posts
 
-@router.get("/all", response_model=List[schemas.Post]) # retreiving preexisting posts from server to user
+@router.get("/all", response_model=List[schemas.PostVote])# retreiving preexisting posts from server to user
 def get_posts(db: Session = Depends(get_db), curr_user= Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search:Optional[str]=""):
   # cur.execute("""SELECT * FROM posts;""")
   # posts = cur.fetchall()
   print(curr_user.email) 
-  posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
-  return posts # sends posts back to user
+  # posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+  posts_votes = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+  return posts_votes # sends posts back to user
 
-@router.get("/{id}", response_model=schemas.Post) # path parameter
+@router.get("/{id}", response_model=schemas.PostVote) # path parameter
 def get_post(id: int, db: Session = Depends(get_db), curr_user= Depends(oauth2.get_current_user)): # validates that id is an integer. no longer necessary to convert to integer by ourselves.
   # cur.execute("""SELECT * FROM posts WHERE id = %s""", (str(id)))
   # post = cur.fetchone()
-  post = db.query(models.Post).filter(models.Post.id == id).first()
+  post = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.id == id).first()
   if not post:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id:{id} not found")
   return post

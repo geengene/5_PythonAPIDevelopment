@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, conint
 
 class UserBase(BaseModel):
   username: str
@@ -33,12 +33,22 @@ class Post(PostBase):
   owner_id: int 
   owner: UserOut
   class Config:
-    from_attributes = True # https://fastapi.tiangolo.com/tutorial/sql-databases/#use-pydantics-orm_mode
+    from_attributes = True 
+    
+class PostVote(BaseModel):
+  Post: Post
+  votes: int
+  class Config:
+    from_attributes = True 
 
-
+    
 class Token(BaseModel):
   access_token: str
   token_type: str
 
 class TokenData(BaseModel):
   id: Optional[str] = None
+
+class Vote(BaseModel):
+  post_id: int
+  dir: conint(ge=0, le=1) # type:ignore

@@ -12,7 +12,7 @@ def get_users(db: Session = Depends(get_db)):
 
 @router.post("/create", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
 def create_user(user: schemas.UserBase, db: Session = Depends(get_db)):
-  hashed_password =  utils.hash(user.password) 
+  hashed_password = utils.hash(user.password) 
   user.password = hashed_password
   new_user = models.User(**dict(user))
   db.add(new_user)
